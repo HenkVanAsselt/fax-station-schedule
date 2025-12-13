@@ -1,8 +1,10 @@
 // use std::env;
 // use std::fs::File;
 // use std::io::Read;
+use std::thread::sleep;
 use csv::{ReaderBuilder, Trim};
 use chrono::{NaiveTime, Utc};
+use std::time::Duration as StdDuration;
 
 #[derive(Debug)]
 pub struct Transmission {
@@ -49,8 +51,44 @@ pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<d
     Ok(transmissions)
 }
 
-pub fn get_next_transmission(stations: Vec<Transmission>) -> Option<Transmission>
+pub fn get_next_transmission(transmissions: Vec<Transmission>) -> Option<Transmission>
 {
     let now = Utc::now().time();
-    stations.into_iter().find(|station| station.time_of_day > now)
+    transmissions.into_iter().find(|station| station.time_of_day > now)
 }
+
+pub fn print_next_transmission(transmission: Transmission, countdown: bool)
+{
+    // Show the upcoming transmission
+
+    let current_time = Utc::now().time();
+
+    let duration = transmission.time_of_day.signed_duration_since(current_time);
+    let remaining_time = duration.num_seconds();
+    let hours = remaining_time / 3600;
+    let minutes = (remaining_time % 3600) / 60;
+    let seconds = remaining_time % 60;
+
+    println!("Next transmission in {:02}:{:02}:{:02}", hours, minutes, seconds);
+    println!("{} {} {} {}", transmission.time_of_day, transmission.station_name, transmission.frequencies, transmission.comment);
+    println!();
+
+    if countdown {
+        print_countdowntimer(remaining_time);
+    }
+}
+
+pub fn print_countdowntimer(remaining_time: i64)
+{
+    let mut remaining = remaining_time;
+    while remaining > 0 {
+        let hours = remaining_time / 3600;
+        let minutes = (remaining_time % 3600) / 60;
+        let seconds = remaining_time % 60;
+        println!("Time remaining: {:02}:{:02}:{:02}", hours, minutes, seconds);
+        sleep(StdDuration::from_secs(1));
+        remaining -= 1;
+    }
+}
+
+
