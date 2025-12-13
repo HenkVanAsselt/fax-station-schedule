@@ -32,7 +32,7 @@ pub fn ui_table(ui: &mut egui::Ui, data: &[Vec<String>]) {
         .column(Column::auto().resizable(true))
         .header(20.0, |mut header| {
             header.col(|ui| { ui.label("Time (UTC)"); });
-            header.col(|ui| { ui.label("WFAX Station"); });
+            header.col(|ui| { ui.label("WAX Station"); });
             header.col(|ui| { ui.label("Frequencies"); });
             header.col(|ui| { ui.label("Comments"); });
         })
