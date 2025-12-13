@@ -2,32 +2,33 @@
 // use std::fs::File;
 // use std::io::Read;
 use csv::{ReaderBuilder, Trim};
-use chrono::{NaiveTime};
+use chrono::{NaiveTime, Utc};
 
 #[derive(Debug)]
-pub struct RadioStation {
+pub struct Transmission {
     pub time_of_day: NaiveTime,
-    pub name: String,
+    pub station_name: String,
     pub frequencies: String,
     pub comment: String,
 }
 
 type Record = (String, String, String, String);
 
-pub fn load_schedule(path: &str) -> Result<Vec<RadioStation>, Box<dyn std::error::Error>>
+pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<dyn std::error::Error>>
 {
 
     // Open the CSV file which contains the transmission schedule.
-    let mut rdr = ReaderBuilder::new()
+    let mut reader = ReaderBuilder::new()
         .has_headers(true)
         .flexible(true)
         .trim(Trim::All)
         .from_path(path)
         .expect("Failed to open CSV file");
 
-    let mut stations: Vec<RadioStation> = Vec::new();
+    // Create a vector to transmissions, found in the CSV file.
+    let mut transmissions: Vec<Transmission> = Vec::new();
 
-    for result in rdr.deserialize() {
+    for result in reader.deserialize() {
         // We must tell Serde what type we want to deserialize into.
         let record: Record = result?;
         // println!("{:?}", record);
@@ -37,13 +38,19 @@ pub fn load_schedule(path: &str) -> Result<Vec<RadioStation>, Box<dyn std::error
         let frequencies = record.2.to_string();
         let comment = record.3.to_string();
 
-        stations.push(RadioStation {
+        transmissions.push(Transmission {
             time_of_day,
-            name,
+            station_name: name,
             frequencies,
             comment,
         });
     }
 
-    Ok(stations)
+    Ok(transmissions)
+}
+
+pub fn get_next_transmission(stations: Vec<Transmission>) -> Option<Transmission>
+{
+    let now = Utc::now().time();
+    stations.into_iter().find(|station| station.time_of_day > now)
 }

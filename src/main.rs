@@ -4,7 +4,7 @@ use chrono::{ Utc};
 use std::thread::sleep;
 use std::time::Duration as StdDuration;
 
-use schedule::{load_schedule};
+use schedule::{load_transmission_schedule, get_next_transmission};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
@@ -18,37 +18,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load the transmission schedule from the CSV file
     let file_path = "./schedules/schedule.csv";
-    let stations = load_schedule(file_path)?;
+    let transmissions = load_transmission_schedule(file_path)?;
 
     // Determine the first next transmission time
+    let current_time = Utc::now().time();
 
-    let now = Utc::now();
-    let current_time = now.time();
-
-    println!();
-    println!("Current time in UTC: {}", current_time);
-
-    let mut next_station = None;
-
-    // Skip the stations for which the transmission time has already passed.
-    for station in &stations {
-        // println!("{} {}", station.time_of_day, station.name);
-        if station.time_of_day > current_time {
-            next_station = Some(station);
-            break;
-        }
-    }
+    let next_transmission = get_next_transmission(transmissions);
 
     // Show the upcoming transmission
-    if let Some(station) = next_station {
-        let duration = station.time_of_day.signed_duration_since(current_time);
+    if let Some(transmission) = next_transmission {
+        let duration = transmission.time_of_day.signed_duration_since(current_time);
         let remaining_time = duration.num_seconds();
         let hours = remaining_time / 3600;
         let minutes = (remaining_time % 3600) / 60;
         let seconds = remaining_time % 60;
 
         println!("Next transmission in {:02}:{:02}:{:02}", hours, minutes, seconds);
-        println!("{} {} {} {}", station.time_of_day, station.name, station.frequencies, station.comment);
+        println!("{} {} {} {}", transmission.time_of_day, transmission.station_name, transmission.frequencies, transmission.comment);
         println!();
 
         // Show a countdown timer
