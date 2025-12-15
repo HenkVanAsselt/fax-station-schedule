@@ -16,10 +16,36 @@ pub struct Transmission {
 
 type Record = (String, String, String, String);
 
-pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<dyn std::error::Error>>
-{
+// fn load_csv(path: &str) -> Vec<Vec<String>> {
+//     let mut rdr = ReaderBuilder::new()
+//         .has_headers(true)
+//         .from_path(path)
+//         .expect("Cannot open CSV file");
+//
+//     let mut rows = Vec::new();
+//     for result in rdr.records() {
+//         let record = result.expect("Invalid record");
+//         rows.push(record.iter().map(|s| s.to_string()).collect());
+//     }
+//     rows
+// }
 
-    // Open the CSV file which contains the transmission schedule.
+// pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<dyn std::error::Error>>
+pub fn load_transmission_schedule(path: &str) -> Vec<Transmission>
+{
+   
+    ///
+    /// Example of the contents of the CSV file:
+    ///
+    /// Time, Station, Frequencies, Comments
+    /// 00:00, GYA Northwood, 2618.5 kHz / 4610 kHz / 8040 kHz, 18Z SURFACE ANALYSIS
+    /// 00:12, GYA Northwood, 2618.5 kHz / 4610 kHz / 8040 kHz, 18Z SURFACE PROGNOSIS (24HR)
+    /// 04:30, DDH3/DDK6, 3855 kHz / 7880 kHz / 13882.5 kHz, SURFACE ANALYSIS NORTH ATLANTIC / EUROPE
+    /// 04:36, GYA Northwood, 2618.5 kHz / 4610 kHz / 8040 kHz, 00Z SURFACE PROGNOSIS (24HR)
+    /// 05:12, DDH3/DDK6, 3855 kHz / 7880 kHz / 13882.5 kHz, 36HR FORECAST SURFACE PRESSURE
+    ///
+    
+    // Open the CSV file which contains the transmission schedule. 
     let mut reader = ReaderBuilder::new()
         .has_headers(true)
         .flexible(true)
@@ -32,7 +58,7 @@ pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<d
 
     for result in reader.deserialize() {
         // We must tell Serde what type we want to deserialize into.
-        let record: Record = result?;
+        let record: Record = result.expect("Error reading record");
         // println!("{:?}", record);
 
         let time_of_day = record.0.parse::<NaiveTime>().expect("Invalid time format");
@@ -48,7 +74,8 @@ pub fn load_transmission_schedule(path: &str) -> Result<Vec<Transmission>, Box<d
         });
     }
 
-    Ok(transmissions)
+    // Ok(transmissions)
+    transmissions
 }
 
 pub fn get_next_transmission(transmissions: Vec<Transmission>) -> Option<Transmission>

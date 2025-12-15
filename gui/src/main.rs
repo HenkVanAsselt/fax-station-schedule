@@ -5,22 +5,11 @@ use eframe::egui;
 // use egui::{TextStyle, TextWrapMode};
 use egui_extras::{TableBuilder, Column};
 use csv::ReaderBuilder;
+use chrono::{ Utc};
+use schedule::{Transmission, load_transmission_schedule};
 
-fn load_csv(path: &str) -> Vec<Vec<String>> {
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_path(path)
-        .expect("Cannot open CSV file");
-
-    let mut rows = Vec::new();
-    for result in rdr.records() {
-        let record = result.expect("Invalid record");
-        rows.push(record.iter().map(|s| s.to_string()).collect());
-    }
-    rows
-}
-
-pub fn ui_table(ui: &mut egui::Ui, data: &[Vec<String>]) {
+pub fn ui_table(ui: &mut egui::Ui, transmissions: &Vec<Transmission>)
+{
     // Create a scrollable table with 4 columns
     TableBuilder::new(ui)
         .striped(true)
@@ -37,34 +26,61 @@ pub fn ui_table(ui: &mut egui::Ui, data: &[Vec<String>]) {
             header.col(|ui| { ui.label("Comments"); });
         })
         .body(|mut body| {
-            for row in data {
+            for t in transmissions {
                 body.row(20.0, |mut row_ui| {
-                    for col in row.iter().take(4) {
-                        row_ui.col(|ui| { ui.label(col); });
-                    }
+                    row_ui.col(|ui| {
+                        ui.label(format!("{}", t.time_of_day));
+                    });
+                    row_ui.col(|ui| {
+                        ui.label(&t.station_name);
+                    });
+                    row_ui.col(|ui| {
+                        ui.label(&t.frequencies);
+                    });
+                    row_ui.col(|ui| {
+                        ui.label(&t.comment);
+                    });
                 });
             }
         });
 }
 
 fn main() -> eframe::Result<()> {
-    let data = load_csv("./schedules/schedule.csv");
+
+    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+
+    // let data = load_csv("./schedules/schedule.csv");
 
     eframe::run_native(
         "WFAX Transmission Schedule",
         eframe::NativeOptions::default(),
-        Box::new(|_cc| Ok(Box::new(MyApp { data }))),
+        Box::new(|_cc| {
+            Ok(Box::<MyApp>::default())
+        }),
     )
 }
 
 struct MyApp {
-    data: Vec<Vec<String>>,
+    transmissions: Vec<Transmission>,       // Transmissions, imported from a CSV file
+    current_utc_time: Utc,                  // Current time (UTC)
+    current_index: i32,                     // Index of the table to highlight
+}
+
+impl Default for MyApp {
+    fn default() -> Self {
+        Self {
+            transmissions: load_transmission_schedule("./schedules/schedule.csv"),
+            current_utc_time: Utc,
+            current_index: 0,
+        }
+    }
 }
 
 impl eframe::App for MyApp {
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui_table(ui, &self.data);
+            ui_table(ui, &self.transmissions);
         });
     }
 }

@@ -3,3 +3,4 @@ target
 *.lock
 
 /chatgpt-prompt.txt
+/chatgpt-examples/sample*.rs
