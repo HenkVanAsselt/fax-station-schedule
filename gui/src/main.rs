@@ -94,7 +94,7 @@ impl eframe::App for MyApp {
                         for (i, t) in self.transmissions.clone().iter().enumerate() {
                             let row_height = 20.0;
                             body.row(row_height, |mut row_ui| {
-                                // Highlight the row with the next transmission
+                                // Highlight the row with the next transmission 
                                 if i == (self.current_index + 1) {
                                     row_ui.set_selected(true);
                                 }
