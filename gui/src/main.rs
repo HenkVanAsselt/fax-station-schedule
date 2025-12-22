@@ -7,6 +7,7 @@ use std::time::Duration;
 // use egui::{TextStyle, TextWrapMode};
 use chrono::Utc;
 use egui::scroll_area::ScrollAreaOutput;
+use egui::{Color32, Ui};
 use egui_extras::{Column, Table, TableBuilder};
 use schedule::{
     Transmission, get_next_transmission, get_next_transmission_index, load_transmission_schedule,
@@ -27,22 +28,20 @@ fn main() -> eframe::Result<()> {
 
 struct MyApp {
     transmissions: Vec<Transmission>, // Transmissions, imported from a CSV file
-    current_utc_time: Utc,            // Current time (UTC)
     current_index: usize,             // Index of the table to highlight
+    next_transmission: Option<Transmission>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            transmissions: match load_transmission_schedule("./schedules/schedule.csv") {
-                Ok(transmissions) => transmissions,
-                Err(err) => {
-                    eprintln!("Error loading transmission schedule: {}", err);
-                    Vec::new()
-                }
-            },
-            current_utc_time: Utc,
+            transmissions: load_transmission_schedule("./schedules/schedule.csv").unwrap_or_else(|err| {
+                eprintln!("Error loading transmission schedule: {}", err);
+                Vec::new()
+            }),
+            // current_utc_time: Utc,
             current_index: 0,
+            next_transmission: None,
         }
     }
 }
@@ -50,19 +49,20 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
+
             let index = get_next_transmission_index(self.transmissions.clone());
             match index {
                 Some(val) => {
                     println!("Next transmission index: {:?}", val);
                     self.current_index = val;
                 }
-                None => println!("No upcoming transmissions found."),
+                None => eprintln!("No upcoming transmissions found."),
             }
 
             let next_transmission = get_next_transmission(self.transmissions.clone());
             match next_transmission {
                 Some(val) => print_next_transmission(val, false),
-                None => println!("No upcoming transmissions found."),
+                None => eprintln!("No upcoming transmissions found."),
             }
 
             egui::ScrollArea::vertical().show(ui, |ui| {
@@ -91,7 +91,12 @@ impl eframe::App for MyApp {
                     })
                     .body(|mut body| {
                         for t in &self.transmissions.clone() {
-                            body.row(20.0, |mut row_ui| {
+                            let row_height = 20.0;
+                            body.row(row_height, |mut row_ui| {
+                                // Highlight the row with the next transmission
+                                if i == (self.current_index + 1) {
+                                    row_ui.set_selected(true);
+                                }
                                 row_ui.col(|ui| {
                                     ui.label(format!("{}", t.transmission_time));
                                 });

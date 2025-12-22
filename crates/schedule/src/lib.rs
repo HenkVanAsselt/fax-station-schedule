@@ -17,6 +17,7 @@ type Record = (String, String, String, String);
 pub fn load_transmission_schedule(
     filename: &str,
 ) -> Result<Vec<Transmission>, Box<dyn std::error::Error>> {
+
     // Example of the contents of the CSV file:
     //
     // Time, Station, Frequencies, Comments
@@ -122,14 +123,3 @@ pub fn print_countdowntimer(remaining_time: i64) {
         remaining -= 1;
     }
 }
-
-// #[cfg(test)]
-// mod unit_tests {
-//     use crate::load_transmission_schedule;
-//
-//     #[test]
-//     fn load_nonexisting_csv()  {
-//         assert!(load_transmission_schedule("../tests/non_existing.csv").is_err());
-//     }
-//
-// }
