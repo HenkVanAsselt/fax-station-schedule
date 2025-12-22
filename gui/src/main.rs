@@ -90,7 +90,8 @@ impl eframe::App for MyApp {
                         });
                     })
                     .body(|mut body| {
-                        for t in &self.transmissions.clone() {
+                        let mut i = 0;
+                        for (i, t) in self.transmissions.clone().iter().enumerate() {
                             let row_height = 20.0;
                             body.row(row_height, |mut row_ui| {
                                 // Highlight the row with the next transmission
