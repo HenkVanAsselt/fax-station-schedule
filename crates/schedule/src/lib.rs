@@ -1,6 +1,6 @@
 use chrono::{NaiveTime, Utc};
 use csv::{ReaderBuilder, Trim};
-use std::path::Path;
+use std::path::{PathBuf};
 use std::thread::sleep;
 use std::time::Duration as StdDuration;
 
@@ -13,6 +13,21 @@ pub struct Transmission {
 }
 
 type Record = (String, String, String, String);
+
+fn find_csv_file(file_name: &str) -> Option<PathBuf> {
+    let current_dir = std::env::current_dir().ok()?;
+    // let file_name = "config.toml";
+
+    // Check the current directory and up to two parents
+    for ancestor in current_dir.ancestors().take(3) {
+        let config_path = ancestor.join(file_name);
+        println!("Checking for CSV file at: {}", config_path.display());
+        if config_path.exists() {
+            return Some(config_path);
+        }
+    }
+    None
+}
 
 pub fn load_transmission_schedule(
     filename: &str,
@@ -27,17 +42,16 @@ pub fn load_transmission_schedule(
     // 04:36, GYA Northwood, 2618.5 kHz / 4610 kHz / 8040 kHz, 00Z SURFACE PROGNOSIS (24HR)
     // 05:12, DDH3/DDK6, 3855 kHz / 7880 kHz / 13882.5 kHz, 36HR FORECAST SURFACE PRESSURE
 
-    // Test if the CSV file exists.
-    if !Path::new(filename).is_file() {
-        return Err("File not found".into());
-    }
+    // let path = PathBuf::new();
+    let csv_path = find_csv_file(filename).expect("Could not find CSV file");
+    println!("Opening CSV file '{}'", csv_path.display());
 
     // Open the CSV file which contains the transmission schedule.
     let mut reader = ReaderBuilder::new()
         .has_headers(true)
         .flexible(true)
         .trim(Trim::All)
-        .from_path(filename)
+        .from_path(csv_path)
         .expect("Failed to open CSV file");
     println!("Opened CSV file");
 
@@ -47,7 +61,7 @@ pub fn load_transmission_schedule(
     for result in reader.deserialize() {
         // We must tell Serde what type we want to deserialize into.
         let record: Record = result.expect("Error reading record");
-        println!("{:?}", record);
+        // println!("{:?}", record);
 
         let transmission_time = record.0.parse::<NaiveTime>().expect("Invalid time format");
         let station_name = record.1.to_string();
@@ -68,10 +82,17 @@ pub fn load_transmission_schedule(
 
 pub fn get_next_transmission(transmissions: Vec<Transmission>) -> Option<Transmission> {
     let now = Utc::now().time();
-    let transmission = transmissions
+    // Old:
+    //
+    // let transmission = transmissions
+    //     .into_iter()
+    //     .find(|station| station.transmission_time > now);
+    // transmission
+    //
+    // New:
+    transmissions
         .into_iter()
-        .find(|station| station.transmission_time > now);
-    transmission
+        .find(|station| station.transmission_time > now)
 }
 
 pub fn get_next_transmission_index(transmissions: Vec<Transmission>) -> Option<usize> {
@@ -81,7 +102,7 @@ pub fn get_next_transmission_index(transmissions: Vec<Transmission>) -> Option<u
         .position(|station| station.transmission_time > now)
 }
 
-pub fn print_next_transmission(transmission: Transmission, countdown: bool) {
+pub fn print_next_transmission(transmission: Transmission) {
     // Show the upcoming transmission
 
     let current_time = Utc::now().time();
@@ -107,9 +128,6 @@ pub fn print_next_transmission(transmission: Transmission, countdown: bool) {
     );
     println!();
 
-    if countdown {
-        print_countdowntimer(remaining_time);
-    }
 }
 
 pub fn print_countdowntimer(remaining_time: i64) {

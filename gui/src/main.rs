@@ -14,8 +14,6 @@ use schedule::{
     print_next_transmission,
 };
 
-// pub fn ui_table(ui: &mut egui::Ui, transmissions: &Vec<Transmission>) -> ScrollAreaOutput<()>
-
 fn main() -> eframe::Result<()> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
@@ -29,7 +27,7 @@ fn main() -> eframe::Result<()> {
 struct MyApp {
     transmissions: Vec<Transmission>, // Transmissions, imported from a CSV file
     current_index: usize,             // Index of the table to highlight
-    next_transmission: Option<Transmission>,
+    // next_transmission: Option<Transmission>,
 }
 
 impl Default for MyApp {
@@ -41,7 +39,7 @@ impl Default for MyApp {
             }),
             // current_utc_time: Utc,
             current_index: 0,
-            next_transmission: None,
+            // next_transmission: None,
         }
     }
 }
@@ -61,7 +59,7 @@ impl eframe::App for MyApp {
 
             let next_transmission = get_next_transmission(self.transmissions.clone());
             match next_transmission {
-                Some(val) => print_next_transmission(val, false),
+                Some(val) => print_next_transmission(val),
                 None => eprintln!("No upcoming transmissions found."),
             }
 
@@ -90,12 +88,12 @@ impl eframe::App for MyApp {
                         });
                     })
                     .body(|mut body| {
-                        let mut i = 0;
+                        // let mut i = 0;
                         for (i, t) in self.transmissions.clone().iter().enumerate() {
                             let row_height = 20.0;
                             body.row(row_height, |mut row_ui| {
                                 // Highlight the row with the next transmission 
-                                if i == (self.current_index + 1) {
+                                if i == (self.current_index) {
                                     row_ui.set_selected(true);
                                 }
                                 row_ui.col(|ui| {
